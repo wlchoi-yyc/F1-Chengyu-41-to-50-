@@ -1,0 +1,127 @@
+<!DOCTYPE html><html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>中二級成語配對遊戲｜比賽版</title>  <!-- Firebase SDK -->  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>  <style>
+    body { font-family: Arial, sans-serif; background-color: #f9f9f9; text-align: center; padding: 20px; }
+    h1 { color: #333; }
+    .game-area { margin: 20px auto; max-width: 900px; }
+    .pairs, .options { display: flex; flex-wrap: wrap; justify-content: center; margin-bottom: 20px; gap: 10px; }
+    .pair, .option { background: #fff; border: 2px solid #ccc; border-radius: 8px; padding: 10px 15px; cursor: pointer; transition: all 0.3s; white-space: nowrap; display: inline-block; }
+    .pair.text-explanation { background-color: #e6f4ff; }
+    .pair img { width: 150px; height: auto; }
+    .selected { border-color: #4CAF50 !important; box-shadow: 0 0 10px #4CAF50; }
+    .message { font-size: 20px; color: #d9534f; font-weight: bold; margin: 20px 0; }
+    .success { color: green; }
+    .trophy { width: 200px; display: none; margin: 20px auto; }
+    .btn { background: #4CAF50; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin: 5px; }
+    .btn:hover { background: #45a049; }
+    .scoreboard { font-size: 18px; margin-bottom: 20px; }
+    #start-form, #leaderboard { background: white; padding: 20px; margin: 20px auto; max-width: 500px; border-radius: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    #start-form input, #start-form select, #start-form button { width: 100%; margin-top: 10px; padding: 8px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+    #start-form h3, #leaderboard h3 { text-align: center; }
+    #leaderboard { background: linear-gradient(to bottom, #fff8dc, #fff); border: 10px solid gold; }
+    #leaderboard .entry { display: flex; justify-content: space-between; font-size: 20px; padding: 8px 0; border-bottom: 1px solid #eee; }
+    #leaderboard .entry:first-child { color: #FFD700; font-weight: bold; }
+    #leaderboard .entry:nth-child(2) { color: #C0C0C0; font-weight: bold; }
+    #leaderboard .entry:nth-child(3) { color: #CD7F32; font-weight: bold; }
+    #deadline { color: red; font-weight: bold; margin: 10px; }
+  </style></head>
+<body><h1>中二級成語配對遊戲（41-50）</h1>
+<div id="deadline">比賽截止時間：2025年4月30日 23:59</div><!-- 輸入資料表單 --><div id="start-form">
+  <h3>請輸入資料後開始遊戲</h3>
+  <label>姓名 <input type="text" id="name-input" placeholder="請輸入姓名"></label>
+  <label>班別
+    <select id="class-input">
+      <option value="2A">2A</option>
+      <option value="2B">2B</option>
+    </select>
+  </label>
+  <label>學號
+    <select id="studentid-input"></select>
+  </label>
+  <button onclick="startGame()">開始遊戲</button>
+</div><!-- 遊戲區域 --><div id="game" class="game-area" style="display:none;"></div>
+<div class="scoreboard">目前分數：<span id="score">0</span>/20</div>
+<div id="message" class="message"></div>
+<img id="trophy" class="trophy" src="trophy.png" alt="大獎杯">
+<br>
+<button id="nextBtn" class="btn" style="display:none">下一關</button>
+<button id="restartBtn" class="btn" style="display:none">重新開始</button>
+<button id="endBtn" class="btn" style="display:none">結束遊戲</button><!-- 排行榜 --><div id="leaderboard" style="display:none;">
+  <h3>積分龍虎榜（累積總分｜頭10位）</h3>
+  <div id="leaderboard-list"></div>
+</div><script>
+// Firebase 設定
+const firebaseConfig = {
+  apiKey: "AIzaSyCWH_RA4gEukvh9YP5Pa-yo4oMvN4lFeSg",
+  authDomain: "chengyu-41-to-50.firebaseapp.com",
+  projectId: "chengyu-41-to-50",
+  storageBucket: "chengyu-41-to-50.firebasestorage.app",
+  messagingSenderId: "1082047227531",
+  appId: "1:1082047227531:web:e74dc4056f39104d94d68e",
+  measurementId: "G-N4CK9PT2PM"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const competitionEndTime = new Date("2025-04-30T23:59:59").getTime();
+
+// 學號自動生成
+window.onload = () => {
+  const studentIdSelect = document.getElementById('studentid-input');
+  for (let i = 1; i <= 40; i++) {
+    const num = i.toString().padStart(2, '0');
+    const option = document.createElement('option');
+    option.value = num;
+    option.textContent = num;
+    studentIdSelect.appendChild(option);
+  }
+  if (localStorage.getItem('name')) {
+    document.getElementById('name-input').value = localStorage.getItem('name');
+    document.getElementById('class-input').value = localStorage.getItem('class');
+    document.getElementById('studentid-input').value = localStorage.getItem('studentId');
+  }
+};
+
+// 遊戲數據與邏輯（略，這部分可按之前版本繼續接入）
+
+// 提交分數
+async function submitScore() {
+  const now = Date.now();
+  if (now > competitionEndTime) {
+    alert("比賽已經結束，不能再提交分數！");
+    return;
+  }
+  const name = localStorage.getItem('name');
+  const className = localStorage.getItem('class');
+  const studentId = localStorage.getItem('studentId');
+  if (!name || !className || !studentId) {
+    alert("資料不齊，無法提交分數！");
+    return;
+  }
+  const docId = `${className}_${studentId}`;
+  const docRef = db.collection("leaderboard").doc(docId);
+  const doc = await docRef.get();
+  if (!doc.exists) {
+    await docRef.set({ name, class: className, studentId, totalScore: score, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+  } else {
+    const data = doc.data();
+    await docRef.update({ totalScore: (data.totalScore || 0) + score, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+  }
+  loadLeaderboard();
+}
+
+// 載入排行榜
+async function loadLeaderboard() {
+  document.getElementById('leaderboard').style.display = 'block';
+  const leaderboardList = document.getElementById('leaderboard-list');
+  leaderboardList.innerHTML = '';
+  const snapshot = await db.collection("leaderboard").orderBy("totalScore", "desc").limit(10).get();
+  const medalIcons = ['🥇','🥈','🥉'];
+  snapshot.forEach((doc, index) => {
+    const data = doc.data();
+    leaderboardList.innerHTML += `<div class="entry"><div>${medalIcons[index] || (index+1)}｜${data.class}｜${data.studentId}｜${data.name}</div><div>${data.totalScore}分</div></div>`;
+  });
+}
+</script></body>
+</html>
